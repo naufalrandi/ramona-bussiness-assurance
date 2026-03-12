@@ -4,66 +4,10 @@ const { Model } = require("sequelize");
 module.exports = (sequelize, DataTypes) => {
   class ContractTemplate extends Model {
     static associate(models) {
-      // define association here
-      // ContractTemplate.belongsTo(models.ContractVariant, {
-      //   foreignKey: 'contractVariantId',
-      //   as: 'contractVariant'
-      // });
-      // ContractTemplate.belongsTo(models.User, {
-      //   foreignKey: 'approverId',
-      //   as: 'approver'
-      // });
-      // ContractTemplate.belongsTo(models.User, {
-      //   foreignKey: 'createdById',
-      //   as: 'createdBy'
-      // });
-
-      // Polymorphic association with DocumentReview
-      ContractTemplate.hasMany(models.DocumentReview, {
-        foreignKey: "reviewableId",
-        constraints: false,
-        scope: {
-          reviewableType: "ContractTemplate",
-        },
-        as: "reviews",
+      ContractTemplate.hasMany(models.ContractTemplateComment, {
+        foreignKey: "contractTemplateId",
+        as: "comments",
       });
-    }
-
-    // Instance method to create a review for this contract template
-    async createReview(userId, additionalData = {}) {
-      const { DocumentReview } = require("./index");
-      return await DocumentReview.createReview(
-        userId,
-        "ContractTemplate",
-        this.id,
-        additionalData
-      );
-    }
-
-    // Instance method to get all reviews for this contract template
-    async getReviews(status = null) {
-      const { DocumentReview } = require("./index");
-      const whereClause = {
-        reviewableType: "ContractTemplate",
-        reviewableId: this.id,
-      };
-
-      if (status) {
-        whereClause.status = status;
-      }
-
-      return await DocumentReview.findAll({
-        where: whereClause,
-        order: [["createdAt", "ASC"]],
-      });
-    }
-
-    // Instance method to check if all required reviews are completed
-    async areReviewsCompleted() {
-      const pendingReviews = await this.getReviews("pending");
-      const inProgressReviews = await this.getReviews("in_progress");
-
-      return pendingReviews.length === 0 && inProgressReviews.length === 0;
     }
   }
 
@@ -71,11 +15,11 @@ module.exports = (sequelize, DataTypes) => {
     {
       id: {
         allowNull: false,
-        autoIncrement: true,
         primaryKey: true,
-        type: DataTypes.INTEGER,
+        type: DataTypes.UUID,
+        defaultValue: DataTypes.UUIDV4,
       },
-      contractVariantId: {
+      contractTypeId: {
         type: DataTypes.INTEGER,
         allowNull: false,
       },
@@ -86,6 +30,11 @@ module.exports = (sequelize, DataTypes) => {
       createdById: {
         type: DataTypes.INTEGER,
         allowNull: false,
+      },
+      reviewerIds: {
+        type: DataTypes.ARRAY(DataTypes.UUID),
+        allowNull: true,
+        defaultValue: [],
       },
       code: {
         type: DataTypes.STRING,

@@ -11,7 +11,7 @@ module.exports = {
         type: Sequelize.INTEGER,
       },
       userId: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
       },
       reviewableType: {
@@ -19,7 +19,15 @@ module.exports = {
         allowNull: false,
       },
       reviewableId: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      modelName: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      serviceName: {
+        type: Sequelize.STRING,
         allowNull: false,
       },
       status: {

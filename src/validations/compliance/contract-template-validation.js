@@ -1,56 +1,57 @@
 const Joi = require("joi");
+const { asArray, CONTRACT_TEMPLATE_STATUSES } = require("../../enum/utils");
 
 const createValidation = Joi.object({
-  contractVariantId: Joi.number().integer().positive().required(),
-  approverId: Joi.number().integer().positive().required(),
-  createdById: Joi.number().integer().positive().required(),
-  reviewers: Joi.array()
-    .items(
-      Joi.object({
-        id: Joi.number().integer().positive().required(),
-      })
-    )
+  contractTypeId: Joi.number().required(),
+  approverId: Joi.string().uuid().required(),
+  createdById: Joi.string().uuid().required(),
+  subcategory: Joi.string().required(),
+  variant: Joi.string().required(),
+  reviewerIds: Joi.array()
+    .items(Joi.string().uuid().required())
     .optional()
     .allow(null),
   standardClauses: Joi.required(),
 });
 
 const updateValidation = Joi.object({
-  id: Joi.number().integer().positive().required(),
-  contractVariantId: Joi.number().integer().positive().required(),
-  approverId: Joi.number().integer().positive().required(),
-  createdById: Joi.number().integer().positive().required(),
-  reviewers: Joi.array()
-    .items(
-      Joi.object({
-        id: Joi.number().integer().positive().required(),
-      })
-    )
+  id: Joi.string().uuid().required(),
+  contractTypeId: Joi.number().required(),
+  approverId: Joi.string().uuid().required(),
+  createdById: Joi.string().uuid().required(),
+  subcategory: Joi.string().required(),
+  variant: Joi.string().required(),
+  reviewerIds: Joi.array()
+    .items(Joi.string().uuid().required())
     .optional()
     .allow(null),
   standardClauses: Joi.required(),
 });
 
 const deleteManyValidation = Joi.object({
-  ids: Joi.array().items(Joi.number().integer().positive()).min(1).required(),
+  ids: Joi.array().items(Joi.string().uuid()).min(1).required(),
 });
 
-const approveValidation = Joi.object({
-  id: Joi.number().integer().positive().required(),
-  approverId: Joi.number().integer().positive().required(),
-  reason: Joi.string().allow("").optional(),
+const commentValidation = Joi.object({
+  userId: Joi.string().uuid().required(),
+  contractTemplateId: Joi.string().uuid().required(),
+  mentions: Joi.array().items(Joi.string().uuid().required()),
+  comment: Joi.string().required(),
 });
 
-const rejectValidation = Joi.object({
-  id: Joi.number().integer().positive().required(),
-  approverId: Joi.number().integer().positive().required(),
-  reason: Joi.string().required(),
+const approvalValidation = Joi.object({
+  userId: Joi.string().uuid().required(),
+  contractTemplateId: Joi.string().uuid().required(),
+  status: Joi.string()
+    .valid(...asArray(CONTRACT_TEMPLATE_STATUSES))
+    .required(),
+  reason: Joi.string().optional().allow("", null),
 });
 
 module.exports = {
   createValidation,
   updateValidation,
   deleteManyValidation,
-  approveValidation,
-  rejectValidation,
+  commentValidation,
+  approvalValidation,
 };

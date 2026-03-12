@@ -13,11 +13,12 @@ module.exports = (sequelize, DataTypes) => {
       scheme: DataTypes.STRING,
       unit: DataTypes.STRING,
       method: DataTypes.STRING,
+      pricing: DataTypes.JSONB,
     },
     {
       sequelize,
       modelName: "EmployeeCompensation",
-    }
+    },
   );
   return EmployeeCompensation;
 };

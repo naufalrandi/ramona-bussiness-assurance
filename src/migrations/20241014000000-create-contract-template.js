@@ -10,7 +10,7 @@ module.exports = {
         primaryKey: true,
         type: Sequelize.INTEGER,
       },
-      contractVariantId: {
+      contractTypeId: {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
@@ -21,6 +21,11 @@ module.exports = {
       createdById: {
         type: Sequelize.INTEGER,
         allowNull: false,
+      },
+      reviewerIds: {
+        type: Sequelize.ARRAY(Sequelize.UUID),
+        allowNull: true,
+        defaultValue: [],
       },
       code: {
         type: Sequelize.STRING,

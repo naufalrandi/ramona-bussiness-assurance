@@ -82,13 +82,10 @@ const destroyMany = async (req, res, next) => {
   }
 };
 
-const submit = async (req, res, next) => {
+const getComment = async (req, res, next) => {
   try {
-    const data = {
-      ...req.body,
-      approverId: req.user?.userId || 1,
-    };
-    const result = await contractTemplateService.submit(req.params.id, data);
+    const result = await contractTemplateService.getComment(req.params.id);
+
     res.status(200).json({
       success: true,
       data: result,
@@ -98,13 +95,14 @@ const submit = async (req, res, next) => {
   }
 };
 
-const approve = async (req, res, next) => {
+const createComment = async (req, res, next) => {
   try {
-    const data = {
-      ...req.body,
-      approverId: req.user?.userId || 1,
-    };
-    const result = await contractTemplateService.approve(req.params.id, data);
+    req.body.userId = req.user?.userId;
+    const result = await contractTemplateService.createComment(
+      req.params.id,
+      req.body,
+    );
+
     res.status(200).json({
       success: true,
       data: result,
@@ -114,13 +112,14 @@ const approve = async (req, res, next) => {
   }
 };
 
-const reject = async (req, res, next) => {
+const approval = async (req, res, next) => {
   try {
-    const data = {
-      ...req.body,
-      approverId: req.user?.userId || 1, // Should come from auth middleware
-    };
-    const result = await contractTemplateService.reject(req.params.id, data);
+    req.body.userId = req.user?.userId;
+    const result = await contractTemplateService.approval(
+      req.params.id,
+      req.body,
+    );
+
     res.status(200).json({
       success: true,
       data: result,
@@ -137,7 +136,7 @@ module.exports = {
   update,
   destroy,
   destroyMany,
-  submit,
-  approve,
-  reject,
+  getComment,
+  createComment,
+  approval,
 };

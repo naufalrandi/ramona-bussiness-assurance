@@ -1,50 +1,118 @@
 const model = require("../../models/index");
+const modelMasterdata = require("../../models/masterdata/index");
 const {
   searchData,
   pagination,
-  getDataById,
   updateWithHistory,
   createContractHistoryEntry,
-  generateContractTemplateCode,
   getUser,
-  getContractVariant,
 } = require("../../helpers/func");
-const { Op, sequelize } = require("sequelize");
-const db = require("../../models/index");
+const { Op } = require("sequelize");
 const validate = require("../../validations/validation");
 const {
   createValidation,
   updateValidation,
   deleteManyValidation,
-  approveValidation,
-  rejectValidation,
+  commentValidation,
+  approvalValidation,
 } = require("../../validations/compliance/contract-template-validation");
-const { asArray, CONTRACT_TEMPLATE_STATUSES } = require("../../enum/utils");
-const documentReviewService = require("./document-review-service");
 
 const getData = async (id) => {
-  const contractTemplate = await getDataById(
-    "ContractTemplate",
-    id,
-    "Contract template not found"
-  );
-
-  contractTemplate.contractVariant = await getContractVariant(
-    contractTemplate.contractVariantId
-  );
-
-  const reviewers = await model.DocumentReview.findAll({
-    where: {
-      reviewableType: "ContractTemplate",
-      reviewableId: id,
-    },
-    order: [["createdAt", "ASC"]],
+  let contractTemplate = await model.ContractTemplate.findOne({
+    where: { id },
+    include: [
+      {
+        model: model.ContractTemplateComment,
+        as: "comments",
+        order: [["createdAt", "DESC"]],
+      },
+    ],
   });
 
+  if (!contractTemplate) {
+    throw new Error("Contract template not found");
+  }
+
+  contractTemplate = contractTemplate.toJSON();
+  contractTemplate.contractType = await getContractType(
+    contractTemplate.contractTypeId,
+  );
+
+  // get approver
   contractTemplate.approver = await getUser(contractTemplate.approverId);
-  contractTemplate.reviewers = reviewers;
+
+  // get comments
+  contractTemplate.comments = await Promise.all(
+    contractTemplate.comments.map(async (comment) => {
+      comment.user = await getUser(comment.userId);
+      return comment;
+    }),
+  );
 
   return contractTemplate;
+};
+
+const getContractType = async (id) => {
+  return await modelMasterdata.ContractType.findOne({
+    where: { id },
+  });
+};
+
+const getAvailableLetter = (usedLetters, preferredLetter) => {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  if (!usedLetters.includes(preferredLetter)) {
+    return preferredLetter;
+  }
+
+  return alphabet.find((letter) => !usedLetters.includes(letter));
+};
+
+const generateCode = async (data, categoryCode) => {
+  const baseSub = data.subcategory.trim().charAt(0).toUpperCase();
+  const baseVar = data.variant.trim().charAt(0).toUpperCase();
+
+  const existing = await model.ContractTemplate.findAll({
+    where: { contractTypeId: data.contractTypeId },
+    attributes: ["code", "subcategory"],
+  });
+
+  // ================================
+  // 1️⃣ HANDLE SUBCATEGORY
+  // ================================
+
+  // Cari apakah subcategory sudah ada
+  const existingSub = existing.find(
+    (item) => item.subcategory === data.subcategory,
+  );
+
+  let subcategoryCode;
+
+  if (existingSub) {
+    // Ambil kode subcategory dari code sebelumnya
+    subcategoryCode = existingSub.code.split("/")[1];
+  } else {
+    // Ambil semua huruf subcategory yang sudah dipakai
+    const usedSubLetters = existing.map((item) => item.code.split("/")[1]);
+
+    subcategoryCode = getAvailableLetter(usedSubLetters, baseSub);
+  }
+
+  // ================================
+  // 2️⃣ HANDLE VARIANT (per subcategory)
+  // ================================
+
+  const existingSameSub = existing.filter(
+    (item) => item.code.split("/")[1] === subcategoryCode,
+  );
+
+  const usedVariantLetters = existingSameSub.map(
+    (item) => item.code.split("/")[2],
+  );
+
+  const variantCode = getAvailableLetter(usedVariantLetters, baseVar);
+
+  return `${categoryCode}/${subcategoryCode}/${variantCode}`;
 };
 
 const getAll = async (data) => {
@@ -63,15 +131,13 @@ const getAll = async (data) => {
 
   result.rows = await Promise.all(
     result.rows.map(async (template) => {
-      const contractVariant = await getContractVariant(
-        template.contractVariantId
-      );
+      const contractType = await getContractType(template.contractTypeId);
 
       return {
         ...template.toJSON(),
-        contractVariant,
+        contractType,
       };
-    })
+    }),
   );
 
   return pagination(result, page, limit);
@@ -80,50 +146,30 @@ const getAll = async (data) => {
 const create = async (data) => {
   data = validate(createValidation, data);
   const user = await getUser(data.createdById);
+  const contractType = await getContractType(data.contractTypeId);
 
-  data.status = CONTRACT_TEMPLATE_STATUSES.DRAFT;
-  data.code = await generateContractTemplateCode(data.contractVariantId);
+  const errors = {};
+  if (!contractType) {
+    errors.contractTypeId = "contract type not found";
+  }
+
+  if (Object.keys(errors).length > 0) {
+    const error = new Error("Validation error");
+    error.errors = errors;
+    throw error;
+  }
+
+  data.code = await generateCode(data, contractType.categoryCode);
   data.histories = [
     createContractHistoryEntry(
       "created",
       data.createdById,
       user ? user.userDetail?.fullname : "Superadmin",
-      "Contract template created"
+      "Contract template created",
     ),
   ];
 
-  const transaction = await db.sequelize.transaction();
-  try {
-    const existingData = await model.ContractTemplate.findOne({
-      where: { code: data.code },
-      transaction,
-    });
-
-    if (existingData) {
-      throw new Error("Contract template with this category already exists");
-    }
-
-    const reviewers = data.reviewers;
-    delete data.reviewers;
-    const contractTemplate = await model.ContractTemplate.create(data, {
-      transaction,
-    });
-
-    if (reviewers && reviewers.length > 0) {
-      await documentReviewService.createBulkReviews(
-        "ContractTemplate",
-        contractTemplate.id,
-        reviewers,
-        transaction
-      );
-    }
-
-    await transaction.commit();
-    return contractTemplate;
-  } catch (error) {
-    await transaction.rollback();
-    throw error;
-  }
+  return await model.ContractTemplate.create(data);
 };
 
 const getOne = async (id) => {
@@ -139,7 +185,7 @@ const update = async (id, data) => {
     "updated",
     data.createdById || 1,
     "Superadmin",
-    "Contract template updated"
+    "Contract template updated",
   );
 
   return await updateWithHistory("ContractTemplate", id, data, historyEntry);
@@ -163,118 +209,49 @@ const destroyMany = async (data) => {
   });
 };
 
-const submit = async (id, submitData) => {
-  const data = { id, ...submitData };
-  validate(approveValidation, data);
-  const existingTemplate = await getData(id);
+const getComment = async (id) => {
+  const result = await model.ContractTemplateComment.findAll({
+    where: {
+      contractTemplateId: id,
+    },
+    order: [["createdAt", "DESC"]],
+  });
 
-  if (existingTemplate.status === CONTRACT_TEMPLATE_STATUSES.PENDING) {
-    throw new Error(`Contract template has already been submitted`);
-  }
-
-  if (existingTemplate.status === CONTRACT_TEMPLATE_STATUSES.APPROVED) {
-    throw new Error(`Contract template has been approved`);
-  }
-
-  if (existingTemplate.status === CONTRACT_TEMPLATE_STATUSES.REJECTED) {
-    throw new Error(`Contract template has been rejected`);
-  }
-
-  const updateData = {
-    status: CONTRACT_TEMPLATE_STATUSES.PENDING,
-  };
-
-  const historyEntry = createContractHistoryEntry(
-    "submitted",
-    data.userId || 1,
-    "Superadmin",
-    data.reason || "Contract template submitted"
-  );
-
-  return await updateWithHistory(
-    "ContractTemplate",
-    id,
-    updateData,
-    historyEntry
+  return await Promise.all(
+    result.map(async (comment) => {
+      comment = comment.toJSON();
+      comment.user = await getUser(comment.userId);
+      return comment;
+    }),
   );
 };
 
-const approve = async (id, approverData) => {
-  const data = { id, ...approverData };
-  validate(approveValidation, data);
-  const existingTemplate = await getData(id);
+const createComment = async (id, data) => {
+  data.contractTemplateId = id;
+  data = validate(commentValidation, data);
 
-  if (existingTemplate.status === CONTRACT_TEMPLATE_STATUSES.DRAFT) {
-    throw new Error(`Contract template is still in draft status`);
+  await getData(id);
+  return await model.ContractTemplateComment.create(data);
+};
+
+const approval = async (id, data) => {
+  data.contractTemplateId = id;
+  data = validate(approvalValidation, data);
+
+  const contractTemplate = await getData(id);
+
+  if (data.userId !== contractTemplate.approverId) {
+    throw new Error("You are not allowed to approve this contract template");
   }
-
-  if (existingTemplate.status === CONTRACT_TEMPLATE_STATUSES.APPROVED) {
-    throw new Error(`Contract template has been approved`);
-  }
-
-  if (existingTemplate.status === CONTRACT_TEMPLATE_STATUSES.REJECTED) {
-    throw new Error(`Contract template has been rejected`);
-  }
-
-  const updateData = {
-    status: CONTRACT_TEMPLATE_STATUSES.APPROVED,
-    approvedAt: new Date(),
-    rejectedAt: null,
-    reason: data.reason || null,
-  };
 
   const historyEntry = createContractHistoryEntry(
     "approved",
-    data.approverId || 1,
+    data.createdById || 1,
     "Superadmin",
-    data.reason || "Contract template approved"
+    "Contract template approved",
   );
 
-  return await updateWithHistory(
-    "ContractTemplate",
-    id,
-    updateData,
-    historyEntry
-  );
-};
-
-const reject = async (id, rejectData) => {
-  const data = { id, ...rejectData };
-  validate(rejectValidation, data);
-  const existingTemplate = await getData(id);
-
-  if (existingTemplate.status === CONTRACT_TEMPLATE_STATUSES.DRAFT) {
-    throw new Error(`Contract template is still in draft status`);
-  }
-
-  if (existingTemplate.status === CONTRACT_TEMPLATE_STATUSES.APPROVED) {
-    throw new Error(`Contract template has been approved`);
-  }
-
-  if (existingTemplate.status === CONTRACT_TEMPLATE_STATUSES.REJECTED) {
-    throw new Error(`Contract template has been rejected`);
-  }
-
-  const updateData = {
-    status: CONTRACT_TEMPLATE_STATUSES.REJECTED,
-    rejectedAt: new Date(),
-    approvedAt: null,
-    reason: data.reason,
-  };
-
-  const historyEntry = createContractHistoryEntry(
-    "rejected",
-    data.approverId || 1,
-    "System",
-    data.reason
-  );
-
-  return await updateWithHistory(
-    "ContractTemplate",
-    id,
-    updateData,
-    historyEntry
-  );
+  return await updateWithHistory("ContractTemplate", id, data, historyEntry);
 };
 
 module.exports = {
@@ -284,7 +261,7 @@ module.exports = {
   update,
   destroy,
   destroyMany,
-  submit,
-  approve,
-  reject,
+  getComment,
+  createComment,
+  approval,
 };
