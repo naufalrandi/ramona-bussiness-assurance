@@ -10,7 +10,7 @@ module.exports = (sequelize, DataTypes) => {
 
       Standard.hasMany(models.StandardClause, {
         foreignKey: "standardId",
-        as: "standardClauses",
+        as: "clauses",
       });
     }
   }
@@ -24,7 +24,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       schemeTagId: DataTypes.UUID,
       prefix: DataTypes.STRING,
-      standardNumber: DataTypes.INTEGER,
+      standardNumber: DataTypes.STRING,
       issueYear: DataTypes.INTEGER,
       type: DataTypes.JSONB,
       title: DataTypes.STRING,
@@ -34,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.VIRTUAL,
         get() {
           return `${this.getDataValue("prefix")}-${this.getDataValue(
-            "standardNumber"
+            "standardNumber",
           )}-${this.getDataValue("issueYear")}`;
         },
       },
@@ -42,7 +42,7 @@ module.exports = (sequelize, DataTypes) => {
     {
       sequelize,
       modelName: "Standard",
-    }
+    },
   );
   return Standard;
 };

@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
       unit: DataTypes.STRING,
       method: DataTypes.STRING,
       pricing: DataTypes.JSONB,
+      roleIds: DataTypes.ARRAY(DataTypes.INTEGER),
     },
     {
       sequelize,

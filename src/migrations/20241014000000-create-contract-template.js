@@ -69,7 +69,6 @@ module.exports = {
     });
 
     // Add indexes for better performance
-    await queryInterface.addIndex("ContractTemplates", ["contractVariantId"]);
     await queryInterface.addIndex("ContractTemplates", ["approverId"]);
     await queryInterface.addIndex("ContractTemplates", ["createdById"]);
     await queryInterface.addIndex("ContractTemplates", ["status"]);
