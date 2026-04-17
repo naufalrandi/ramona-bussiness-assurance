@@ -6,20 +6,20 @@ module.exports = {
     await queryInterface.createTable("ContractTemplates", {
       id: {
         allowNull: false,
-        autoIncrement: true,
         primaryKey: true,
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
+        defaultValue: Sequelize.UUIDV4,
       },
       contractTypeId: {
         type: Sequelize.INTEGER,
         allowNull: false,
       },
       approverId: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
       },
       createdById: {
-        type: Sequelize.INTEGER,
+        type: Sequelize.UUID,
         allowNull: false,
       },
       reviewerIds: {
@@ -36,11 +36,19 @@ module.exports = {
         type: Sequelize.STRING,
         allowNull: false,
       },
+      subcategory: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      variant: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
       reason: {
         type: Sequelize.TEXT,
         allowNull: true,
       },
-      standardClauses: {
+      clauses: {
         type: Sequelize.JSONB,
         allowNull: true,
         defaultValue: null,

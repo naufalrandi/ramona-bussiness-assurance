@@ -7,11 +7,12 @@ const createValidation = Joi.object({
   createdById: Joi.string().uuid().required(),
   subcategory: Joi.string().required(),
   variant: Joi.string().required(),
+  status: Joi.string().optional().allow(null, ""),
   reviewerIds: Joi.array()
     .items(Joi.string().uuid().required())
     .optional()
     .allow(null),
-  standardClauses: Joi.required(),
+  clauses: Joi.required(),
 });
 
 const updateValidation = Joi.object({
@@ -21,11 +22,12 @@ const updateValidation = Joi.object({
   createdById: Joi.string().uuid().required(),
   subcategory: Joi.string().required(),
   variant: Joi.string().required(),
+  status: Joi.string().optional().allow(null, ""),
   reviewerIds: Joi.array()
     .items(Joi.string().uuid().required())
     .optional()
     .allow(null),
-  standardClauses: Joi.required(),
+  clauses: Joi.required(),
 });
 
 const deleteManyValidation = Joi.object({

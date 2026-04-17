@@ -41,6 +41,14 @@ module.exports = (sequelize, DataTypes) => {
         allowNull: false,
         unique: true,
       },
+      subcategory: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
+      variant: {
+        type: DataTypes.STRING,
+        allowNull: false,
+      },
       status: {
         type: DataTypes.STRING,
         allowNull: false,
@@ -49,7 +57,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         allowNull: true,
       },
-      standardClauses: {
+      clauses: {
         type: DataTypes.JSONB,
         allowNull: true,
         defaultValue: null,
@@ -73,7 +81,7 @@ module.exports = (sequelize, DataTypes) => {
       modelName: "ContractTemplate",
       timestamps: true,
       underscored: false,
-    }
+    },
   );
 
   return ContractTemplate;
