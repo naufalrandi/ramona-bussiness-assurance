@@ -140,7 +140,7 @@ const getAll = async (data) => {
     }),
   );
 
-  return pagination(result, page, limit);
+  return await pagination(result, page, limit, model.ContractTemplate);
 };
 
 const create = async (data) => {

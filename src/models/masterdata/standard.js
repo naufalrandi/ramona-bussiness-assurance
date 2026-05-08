@@ -7,11 +7,6 @@ module.exports = (sequelize, DataTypes) => {
         foreignKey: "schemeTagId",
         as: "schemeTag",
       });
-
-      Standard.hasMany(models.StandardClause, {
-        foreignKey: "standardId",
-        as: "clauses",
-      });
     }
   }
   Standard.init(

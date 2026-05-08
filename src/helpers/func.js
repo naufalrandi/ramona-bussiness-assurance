@@ -47,14 +47,14 @@ function verifyRefreshToken(token) {
   return jwt.verify(token, JWT_REFRESH_SECRET, { issuer: JWT_ISSUER });
 }
 
-function pagination(data, page, limit) {
-  const { count: totalItems, rows: datas } = data;
+async function pagination(data, page, limit, model) {
+  const totalItems = (await model?.count()) || 0;
   const currentPage = page ? +page : 0;
   const totalPages = Math.ceil(totalItems / limit);
 
   return {
     totalItems,
-    data: datas,
+    data: data.rows,
     totalPages,
     currentPage,
   };
@@ -127,7 +127,7 @@ function decryptData(encryptedData) {
 function checkStatus(statuses, status, key = null) {
   if (!statuses.includes(status))
     throw new Error(
-      `${key || "Status"} must be one of: ${statuses.join(", ")}`
+      `${key || "Status"} must be one of: ${statuses.join(", ")}`,
     );
 }
 
@@ -154,7 +154,7 @@ async function checkUniqueness(
   field,
   value,
   excludeId = null,
-  errorMessage = null
+  errorMessage = null,
 ) {
   const whereClause = { [field]: value };
 
@@ -177,7 +177,7 @@ function addHistoryEntry(
   userId,
   userName = "Superadmin",
   notes = "",
-  createdAt = new Date()
+  createdAt = new Date(),
 ) {
   const histories = Array.isArray(existingHistories)
     ? [...existingHistories]
@@ -198,14 +198,14 @@ function addHistoryEntry(
 function validateStatusTransition(
   currentStatus,
   newStatus,
-  allowedTransitions
+  allowedTransitions,
 ) {
   const allowed = allowedTransitions[currentStatus] || [];
 
   if (!allowed.includes(newStatus)) {
     throw new ResponseError(
       400,
-      `Cannot transition from ${currentStatus} to ${newStatus}`
+      `Cannot transition from ${currentStatus} to ${newStatus}`,
     );
   }
 }
@@ -219,7 +219,7 @@ async function updateWithHistory(modelName, id, updateData, historyEntry) {
     historyEntry.action,
     historyEntry.userId,
     historyEntry.userName,
-    historyEntry.notes
+    historyEntry.notes,
   );
 
   const finalData = {
@@ -242,7 +242,7 @@ function createContractHistoryEntry(
   action,
   userId,
   userName = "Superadmin",
-  notes = ""
+  notes = "",
 ) {
   return {
     action,
@@ -324,9 +324,8 @@ async function generateLeadCode(transaction = null) {
 // Helper function to check if legal entity type exists in masterdata
 async function checkLegalEntityType(legalEntityTypeId) {
   try {
-    const legalEntityType = await modelMasterdata.LegalEntityType.findByPk(
-      legalEntityTypeId
-    );
+    const legalEntityType =
+      await modelMasterdata.LegalEntityType.findByPk(legalEntityTypeId);
     return !!legalEntityType;
   } catch (error) {
     console.error("Error checking legal entity type:", error);
@@ -369,7 +368,7 @@ async function enrichAddressWithMasterdata(addressId, modelMasterdata) {
     promises.push(
       modelMasterdata.Country.findByPk(address.countryId, {
         attributes: ["id", "name"],
-      }).then((country) => ({ field: "country", data: country }))
+      }).then((country) => ({ field: "country", data: country })),
     );
   }
 
@@ -377,7 +376,7 @@ async function enrichAddressWithMasterdata(addressId, modelMasterdata) {
     promises.push(
       modelMasterdata.Province.findByPk(address.provinceId, {
         attributes: ["id", "name"],
-      }).then((province) => ({ field: "province", data: province }))
+      }).then((province) => ({ field: "province", data: province })),
     );
   }
 
@@ -385,7 +384,7 @@ async function enrichAddressWithMasterdata(addressId, modelMasterdata) {
     promises.push(
       modelMasterdata.City.findByPk(address.cityId, {
         attributes: ["id", "name"],
-      }).then((city) => ({ field: "city", data: city }))
+      }).then((city) => ({ field: "city", data: city })),
     );
   }
 
@@ -393,7 +392,7 @@ async function enrichAddressWithMasterdata(addressId, modelMasterdata) {
     promises.push(
       modelMasterdata.District.findByPk(address.districtId, {
         attributes: ["id", "name"],
-      }).then((district) => ({ field: "district", data: district }))
+      }).then((district) => ({ field: "district", data: district })),
     );
   }
 
@@ -401,7 +400,7 @@ async function enrichAddressWithMasterdata(addressId, modelMasterdata) {
     promises.push(
       modelMasterdata.Village.findByPk(address.villageId, {
         attributes: ["id", "name"],
-      }).then((village) => ({ field: "village", data: village }))
+      }).then((village) => ({ field: "village", data: village })),
     );
   }
 
