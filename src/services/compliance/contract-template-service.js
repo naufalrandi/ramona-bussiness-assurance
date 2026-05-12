@@ -240,8 +240,10 @@ const approval = async (id, data) => {
 
   const contractTemplate = await getData(id);
 
-  if (data.userId !== contractTemplate.approverId) {
-    throw new Error("You are not allowed to approve this contract template");
+  if (contractTemplate.status !== "Draft") {
+    if (data.userId !== contractTemplate.approverId) {
+      throw new Error("You are not allowed to approve this contract template");
+    }
   }
 
   const historyEntry = createContractHistoryEntry(
