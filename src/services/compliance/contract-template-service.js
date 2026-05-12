@@ -34,11 +34,6 @@ const getData = async (id) => {
   }
 
   contractTemplate = contractTemplate.toJSON();
-  contractTemplate.contractType = await getContractType(
-    contractTemplate.contractTypeId,
-  );
-
-  // get approver
   contractTemplate.approver = await getUser(contractTemplate.approverId);
 
   // get comments
@@ -52,65 +47,55 @@ const getData = async (id) => {
   return contractTemplate;
 };
 
-const getContractType = async (id) => {
-  return await modelMasterdata.ContractType.findOne({
-    where: { id },
-  });
+const getCategoryCode = (value) => {
+  switch (value) {
+    case "Employment":
+      return "E";
+    case "Service":
+      return "S";
+    default:
+      return "";
+  }
 };
 
-const getAvailableLetter = (usedLetters, preferredLetter) => {
-  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-
-  if (!usedLetters.includes(preferredLetter)) {
-    return preferredLetter;
+const getSubcategoryCode = (value) => {
+  switch (value) {
+    case "PKWT":
+      return "FD";
+    case "PKWTT":
+      return "P";
+    case "Certification":
+      return "C";
+    case "Training":
+      return "T";
+    default:
+      return "";
   }
-
-  return alphabet.find((letter) => !usedLetters.includes(letter));
 };
 
-const generateCode = async (data, categoryCode) => {
-  const baseSub = data.subcategory.trim().charAt(0).toUpperCase();
-  const baseVar = data.variant.trim().charAt(0).toUpperCase();
-
-  const existing = await model.ContractTemplate.findAll({
-    where: { contractTypeId: data.contractTypeId },
-    attributes: ["code", "subcategory"],
-  });
-
-  // ================================
-  // 1️⃣ HANDLE SUBCATEGORY
-  // ================================
-
-  // Cari apakah subcategory sudah ada
-  const existingSub = existing.find(
-    (item) => item.subcategory === data.subcategory,
-  );
-
-  let subcategoryCode;
-
-  if (existingSub) {
-    // Ambil kode subcategory dari code sebelumnya
-    subcategoryCode = existingSub.code.split("/")[1];
-  } else {
-    // Ambil semua huruf subcategory yang sudah dipakai
-    const usedSubLetters = existing.map((item) => item.code.split("/")[1]);
-
-    subcategoryCode = getAvailableLetter(usedSubLetters, baseSub);
+const getVariantCode = (value) => {
+  switch (value) {
+    case "Regular":
+      return "R";
+    case "Auditor":
+      return "A";
+    case "Trainer":
+      return "T";
+    case "In-House Training":
+      return "IHT";
+    case "Public Training":
+      return "PT";
+    case "Personnel Certification":
+      return "PC";
+    default:
+      return "";
   }
+};
 
-  // ================================
-  // 2️⃣ HANDLE VARIANT (per subcategory)
-  // ================================
-
-  const existingSameSub = existing.filter(
-    (item) => item.code.split("/")[1] === subcategoryCode,
-  );
-
-  const usedVariantLetters = existingSameSub.map(
-    (item) => item.code.split("/")[2],
-  );
-
-  const variantCode = getAvailableLetter(usedVariantLetters, baseVar);
+const generateCode = async (data) => {
+  const categoryCode = getCategoryCode(data.category);
+  const subcategoryCode = getSubcategoryCode(data.subcategory);
+  const variantCode = getVariantCode(data.variant);
 
   return `${categoryCode}/${subcategoryCode}/${variantCode}`;
 };
@@ -129,37 +114,14 @@ const getAll = async (data) => {
     attributes: { exclude: ["histories"] },
   });
 
-  result.rows = await Promise.all(
-    result.rows.map(async (template) => {
-      const contractType = await getContractType(template.contractTypeId);
-
-      return {
-        ...template.toJSON(),
-        contractType,
-      };
-    }),
-  );
-
   return await pagination(result, page, limit, model.ContractTemplate);
 };
 
 const create = async (data) => {
   data = validate(createValidation, data);
   const user = await getUser(data.createdById);
-  const contractType = await getContractType(data.contractTypeId);
 
-  const errors = {};
-  if (!contractType) {
-    errors.contractTypeId = "contract type not found";
-  }
-
-  if (Object.keys(errors).length > 0) {
-    const error = new Error("Validation error");
-    error.errors = errors;
-    throw error;
-  }
-
-  data.code = await generateCode(data, contractType.categoryCode);
+  data.code = await generateCode(data);
   data.histories = [
     createContractHistoryEntry(
       "created",

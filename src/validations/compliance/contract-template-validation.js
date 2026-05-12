@@ -2,9 +2,9 @@ const Joi = require("joi");
 const { asArray, CONTRACT_TEMPLATE_STATUSES } = require("../../enum/utils");
 
 const createValidation = Joi.object({
-  contractTypeId: Joi.number().required(),
   approverId: Joi.string().uuid().required(),
   createdById: Joi.string().uuid().required(),
+  category: Joi.string().required(),
   subcategory: Joi.string().required(),
   variant: Joi.string().required(),
   status: Joi.string().optional().allow(null, ""),
@@ -17,9 +17,9 @@ const createValidation = Joi.object({
 
 const updateValidation = Joi.object({
   id: Joi.string().uuid().required(),
-  contractTypeId: Joi.number().required(),
   approverId: Joi.string().uuid().required(),
   createdById: Joi.string().uuid().required(),
+  category: Joi.string().required(),
   subcategory: Joi.string().required(),
   variant: Joi.string().required(),
   status: Joi.string().optional().allow(null, ""),

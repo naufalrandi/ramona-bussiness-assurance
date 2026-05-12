@@ -253,39 +253,6 @@ function createContractHistoryEntry(
   };
 }
 
-async function generateContractTemplateCode(contractVariantId) {
-  if (!contractVariantId) {
-    throw new Error("contractVariantId is required to generate code");
-  }
-
-  const contractVariant = await modelMasterdata.ContractVariant.findOne({
-    where: { id: contractVariantId },
-    include: [
-      {
-        model: modelMasterdata.ContractSubcategory,
-        as: "contractSubcategory",
-        include: [
-          {
-            model: modelMasterdata.ContractCategory,
-            as: "contractCategory",
-          },
-        ],
-      },
-    ],
-  });
-
-  if (!contractVariant) {
-    throw new Error("Invalid contractVariantId");
-  }
-
-  const variantCode = contractVariant?.code ?? "";
-  const subCategoryCode = contractVariant?.contractSubcategory?.code ?? "";
-  const categoryCode =
-    contractVariant?.contractSubcategory?.contractCategory?.code ?? "";
-
-  return `${categoryCode}/${subCategoryCode}/${variantCode}`;
-}
-
 async function getUser(userId) {
   if (!userId) return null;
   const user = await modelAdminstrative.User.findByPk(userId, {
@@ -436,7 +403,6 @@ module.exports = {
   validateStatusTransition,
   updateWithHistory,
   createContractHistoryEntry,
-  generateContractTemplateCode,
   getUser,
   generateLeadCode,
   checkLegalEntityType,

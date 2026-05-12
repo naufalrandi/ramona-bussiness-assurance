@@ -19,10 +19,6 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.UUID,
         defaultValue: DataTypes.UUIDV4,
       },
-      contractTypeId: {
-        type: DataTypes.INTEGER,
-        allowNull: false,
-      },
       approverId: {
         type: DataTypes.INTEGER,
         allowNull: false,
@@ -40,6 +36,10 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.STRING,
         allowNull: false,
         unique: true,
+      },
+      category: {
+        type: DataTypes.STRING,
+        allowNull: false,
       },
       subcategory: {
         type: DataTypes.STRING,

@@ -10,10 +10,6 @@ module.exports = {
         type: Sequelize.UUID,
         defaultValue: Sequelize.UUIDV4,
       },
-      contractTypeId: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-      },
       approverId: {
         type: Sequelize.UUID,
         allowNull: false,
@@ -33,6 +29,10 @@ module.exports = {
         unique: true,
       },
       status: {
+        type: Sequelize.STRING,
+        allowNull: false,
+      },
+      category: {
         type: Sequelize.STRING,
         allowNull: false,
       },
