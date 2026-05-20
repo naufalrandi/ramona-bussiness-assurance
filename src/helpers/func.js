@@ -49,7 +49,7 @@ function verifyRefreshToken(token) {
 
 async function pagination(data, page, limit, model) {
   const totalItems = (await model?.count()) || 0;
-  const currentPage = page ? +page : 0;
+  const currentPage = page ? +page : 1;
   const totalPages = Math.ceil(totalItems / limit);
 
   return {
