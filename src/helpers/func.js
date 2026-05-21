@@ -61,7 +61,7 @@ async function pagination(data, page, limit, model) {
 }
 
 function paginationData(query) {
-  let { page, size, sortBy, orderby, search } = query;
+  let { page, size, sortBy, orderBy: orderby, search } = query;
   sortBy = sortBy ?? "createdAt";
   orderby = orderby ?? "desc";
   search = search ?? "";
