@@ -11,11 +11,12 @@ module.exports = (sequelize, DataTypes) => {
       name: DataTypes.STRING,
       code: DataTypes.STRING,
       symbol: DataTypes.STRING,
+      locale: DataTypes.STRING,
     },
     {
       sequelize,
       modelName: "Currency",
-    }
+    },
   );
   return Currency;
 };
