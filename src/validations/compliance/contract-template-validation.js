@@ -8,6 +8,7 @@ const createValidation = Joi.object({
   subcategory: Joi.string().required(),
   variant: Joi.string().required(),
   status: Joi.string().optional().allow(null, ""),
+  regulatoryCompensations: Joi.any().optional().allow(null, ""),
   reviewerIds: Joi.array()
     .items(Joi.string().uuid().required())
     .optional()
@@ -23,11 +24,17 @@ const updateValidation = Joi.object({
   subcategory: Joi.string().required(),
   variant: Joi.string().required(),
   status: Joi.string().optional().allow(null, ""),
+  regulatoryCompensations: Joi.any().optional().allow(null, ""),
   reviewerIds: Joi.array()
     .items(Joi.string().uuid().required())
     .optional()
     .allow(null),
   clauses: Joi.required(),
+});
+
+const assignCompensationValidation = Joi.object({
+  id: Joi.string().uuid().required(),
+  regulatoryCompensations: Joi.any().required(),
 });
 
 const deleteManyValidation = Joi.object({
@@ -56,4 +63,5 @@ module.exports = {
   deleteManyValidation,
   commentValidation,
   approvalValidation,
+  assignCompensationValidation,
 };

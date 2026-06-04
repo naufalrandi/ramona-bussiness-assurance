@@ -8,6 +8,7 @@ mainRoutes.get("/contract-templates", authMiddleware, contractTemplateController
 mainRoutes.post("/contract-templates", authMiddleware, contractTemplateController.create);
 mainRoutes.get("/contract-templates/:id", authMiddleware, contractTemplateController.getOne);
 mainRoutes.put("/contract-templates/:id", authMiddleware, contractTemplateController.update);
+mainRoutes.put("/contract-templates/:id/assign-regulatory-compensations", authMiddleware, contractTemplateController.assignCompensation);
 mainRoutes.delete("/contract-templates/:id", authMiddleware, contractTemplateController.destroy);
 mainRoutes.delete("/contract-templates", authMiddleware, contractTemplateController.destroyMany);
 mainRoutes.get("/contract-templates/:id/comments", authMiddleware, contractTemplateController.getComment);

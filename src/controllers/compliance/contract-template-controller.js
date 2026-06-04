@@ -58,6 +58,22 @@ const update = async (req, res, next) => {
   }
 };
 
+const assignCompensation = async (req, res, next) => {
+  try {
+    const result = await contractTemplateService.assignCompensation(
+      req.params.id,
+      req.body,
+    );
+
+    res.status(200).json({
+      success: true,
+      data: result,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const destroy = async (req, res, next) => {
   try {
     const result = await contractTemplateService.destroy(req.params.id);
@@ -138,5 +154,6 @@ module.exports = {
   destroyMany,
   getComment,
   createComment,
+  assignCompensation,
   approval,
 };

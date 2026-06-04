@@ -15,6 +15,7 @@ const {
   deleteManyValidation,
   commentValidation,
   approvalValidation,
+  assignCompensationValidation,
 } = require("../../validations/compliance/contract-template-validation");
 
 const getData = async (id) => {
@@ -153,6 +154,14 @@ const update = async (id, data) => {
   return await updateWithHistory("ContractTemplate", id, data, historyEntry);
 };
 
+const assignCompensation = async (id, data) => {
+  data.id = id;
+  data = validate(assignCompensationValidation, data);
+
+  await getData(id);
+  return await model.ContractTemplate.update(data, { where: { id } });
+};
+
 const destroy = async (id) => {
   await getData(id);
   return await model.ContractTemplate.destroy({
@@ -227,5 +236,6 @@ module.exports = {
   destroyMany,
   getComment,
   createComment,
+  assignCompensation,
   approval,
 };

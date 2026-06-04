@@ -58,6 +58,10 @@ module.exports = {
         allowNull: true,
         defaultValue: "[]",
       },
+      regulatoryCompensations: {
+        type: Sequelize.JSONB,
+        allowNull: true,
+      },
       approvedAt: {
         type: Sequelize.DATE,
         allowNull: true,
