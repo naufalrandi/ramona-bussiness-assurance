@@ -18,6 +18,12 @@ const {
   assignCompensationValidation,
 } = require("../../validations/compliance/contract-template-validation");
 
+const getRegulatoryCompensation = (id) => {
+  return modelMasterdata.RegulatoryCompensation.findOne({
+    where: { id },
+  });
+};
+
 const getData = async (id) => {
   let contractTemplate = await model.ContractTemplate.findOne({
     where: { id },
@@ -36,6 +42,12 @@ const getData = async (id) => {
 
   contractTemplate = contractTemplate.toJSON();
   contractTemplate.approver = await getUser(contractTemplate.approverId);
+
+  contractTemplate.regulatoryCompensations = await Promise.all(
+    contractTemplate.regulatoryCompensationIds.map(async (id) => {
+      return await getRegulatoryCompensation(id);
+    }),
+  );
 
   // get comments
   contractTemplate.comments = await Promise.all(
@@ -114,6 +126,20 @@ const getAll = async (data) => {
     order: [[sortBy, orderby]],
     attributes: { exclude: ["histories"] },
   });
+
+  result.rows = await Promise.all(
+    result.rows.map(async (contractTemplate) => {
+      contractTemplate = contractTemplate.toJSON();
+      contractTemplate.approver = await getUser(contractTemplate.approverId);
+      contractTemplate.regulatoryCompensations = await Promise.all(
+        contractTemplate.regulatoryCompensationIds.map(async (id) => {
+          return await getRegulatoryCompensation(id);
+        }),
+      );
+
+      return contractTemplate;
+    }),
+  );
 
   return await pagination(result, page, limit, model.ContractTemplate);
 };
