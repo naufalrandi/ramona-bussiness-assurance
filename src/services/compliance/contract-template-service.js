@@ -44,9 +44,9 @@ const getData = async (id) => {
   contractTemplate.approver = await getUser(contractTemplate.approverId);
 
   contractTemplate.regulatoryCompensations = await Promise.all(
-    contractTemplate.regulatoryCompensationIds.map(async (id) => {
+    contractTemplate?.regulatoryCompensationIds?.map(async (id) => {
       return await getRegulatoryCompensation(id);
-    }),
+    }) || [],
   );
 
   // get comments
@@ -132,9 +132,9 @@ const getAll = async (data) => {
       contractTemplate = contractTemplate.toJSON();
       contractTemplate.approver = await getUser(contractTemplate.approverId);
       contractTemplate.regulatoryCompensations = await Promise.all(
-        contractTemplate.regulatoryCompensationIds.map(async (id) => {
+        contractTemplate?.regulatoryCompensationIds?.map(async (id) => {
           return await getRegulatoryCompensation(id);
-        }),
+        }) || [],
       );
 
       return contractTemplate;
